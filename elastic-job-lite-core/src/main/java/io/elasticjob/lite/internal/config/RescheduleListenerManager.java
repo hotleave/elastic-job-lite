@@ -43,15 +43,15 @@ public final class RescheduleListenerManager extends AbstractListenerManager {
     
     @Override
     public void start() {
-        addDataListener(new CronSettingAndJobEventChangedJobListener());
+        addDataListener(new JobSettingAndJobEventChangedJobListener());
     }
     
-    class CronSettingAndJobEventChangedJobListener extends AbstractJobListener {
+    class JobSettingAndJobEventChangedJobListener extends AbstractJobListener {
         
         @Override
         protected void dataChanged(final String path, final Type eventType, final String data) {
             if (configNode.isConfigPath(path) && Type.NODE_UPDATED == eventType && !JobRegistry.getInstance().isShutdown(jobName)) {
-                JobRegistry.getInstance().getJobScheduleController(jobName).rescheduleJob(LiteJobConfigurationGsonFactory.fromJson(data).getTypeConfig().getCoreConfig().getCron());
+                JobRegistry.getInstance().getJobScheduleController(jobName).rescheduleJob(LiteJobConfigurationGsonFactory.fromJson(data).getTypeConfig().getCoreConfig());
             }
         }
     }

@@ -72,7 +72,7 @@ public final class JobStatisticsAPIImpl implements JobStatisticsAPI {
         }
         LiteJobConfiguration liteJobConfig = LiteJobConfigurationGsonFactory.fromJson(liteJobConfigJson);
         result.setDescription(liteJobConfig.getTypeConfig().getCoreConfig().getDescription());
-        result.setCron(liteJobConfig.getTypeConfig().getCoreConfig().getCron());
+        result.setSchedule(liteJobConfig.getTypeConfig().getCoreConfig().getSchedule());
         result.setInstanceCount(getJobInstanceCount(jobName));
         result.setShardingTotalCount(liteJobConfig.getTypeConfig().getCoreConfig().getShardingTotalCount());
         result.setStatus(getJobStatus(jobName));

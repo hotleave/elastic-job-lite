@@ -17,6 +17,7 @@
 
 package io.elasticjob.lite.lifecycle.domain;
 
+import io.elasticjob.lite.config.job.JobSchedule;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,6 +41,8 @@ public final class JobBriefInfo implements Serializable, Comparable<JobBriefInfo
     private String description;
     
     private String cron;
+
+    private JobSchedule schedule;
     
     private int instanceCount;
     

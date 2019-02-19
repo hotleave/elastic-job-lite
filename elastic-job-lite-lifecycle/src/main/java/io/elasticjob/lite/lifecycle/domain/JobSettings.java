@@ -18,6 +18,7 @@
 package io.elasticjob.lite.lifecycle.domain;
 
 import io.elasticjob.lite.executor.handler.JobProperties.JobPropertiesEnum;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,48 +28,82 @@ import java.util.Map;
 
 /**
  * 作业设置对象.
- * 
+ *
  * @author zhangliang
  */
 @Getter
 @Setter
 public final class JobSettings implements Serializable {
-    
+
     private static final long serialVersionUID = -6532210090618686688L;
-    
+
     private String jobName;
-    
+
     private String jobType;
-    
+
     private String jobClass;
-    
+
     private String cron;
-    
+
+    private JobScheduleSettings schedule;
+
     private int shardingTotalCount;
-    
+
     private String shardingItemParameters;
-    
+
     private String jobParameter;
-    
+
     private boolean monitorExecution;
-    
+
     private boolean streamingProcess;
-    
+
     private int maxTimeDiffSeconds;
-    
+
     private int monitorPort = -1;
-    
+
     private boolean failover;
-    
+
     private boolean misfire;
-    
+
     private String jobShardingStrategyClass;
-    
+
     private String description;
-    
+
     private Map<String, String> jobProperties = new LinkedHashMap<>(JobPropertiesEnum.values().length, 1);
-    
+
     private String scriptCommandLine;
-    
+
     private int reconcileIntervalMinutes;
+
+    @Data
+    public static class JobScheduleSettings {
+        private String type;
+        private String cron;
+        private Integer interval;
+        private String intervalUnit;
+        private String daysOfWeek;
+        private TimeOfDay startTimeOfDay;
+        private TimeOfDay endTimeOfDay;
+        private String timeZone;
+    }
+
+    @Data
+    public static class TimeOfDay {
+        private Integer hour;
+        private Integer minute;
+        private Integer second;
+
+        public static TimeOfDay valueOf(org.quartz.TimeOfDay source) {
+            if (source == null) {
+                return null;
+            }
+
+            TimeOfDay result = new TimeOfDay();
+            result.hour = source.getHour();
+            result.minute = source.getMinute();
+            result.second = source.getSecond();
+
+            return result;
+        }
+    }
 }

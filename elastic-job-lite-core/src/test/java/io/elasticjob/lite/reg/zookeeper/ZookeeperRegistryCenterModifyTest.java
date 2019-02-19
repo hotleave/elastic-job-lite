@@ -30,10 +30,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public final class ZookeeperRegistryCenterModifyTest {
     
@@ -57,8 +54,7 @@ public final class ZookeeperRegistryCenterModifyTest {
     
     @Test
     public void assertPersist() {
-        zkRegCenter.persist("/test", "test_update");
-        zkRegCenter.persist("/persist/new", "new_value");
+        zkRegCenter.persist("/myTestJob/config", "{\"jobName\":\"generateReportIvrJob\",\"jobClass\":\"com.zhicheng.sky.job.GenerateReportIvrJob\",\"jobType\":\"SIMPLE\",\"cron\":\"0 0 1 * * ?\",\"shardingTotalCount\":1,\"shardingItemParameters\":\"\",\"jobParameter\":\"\",\"failover\":false,\"misfire\":true,\"description\":\"天迹-拉取通话明细-数据拉取\",\"jobProperties\":{\"job_exception_handler\":\"com.dangdang.ddframe.job.executor.handler.impl.DefaultJobExceptionHandler\",\"executor_service_handler\":\"com.dangdang.ddframe.job.executor.handler.impl.DefaultExecutorServiceHandler\"},\"monitorExecution\":true,\"maxTimeDiffSeconds\":-1,\"monitorPort\":-1,\"jobShardingStrategyClass\":\"\",\"reconcileIntervalMinutes\":10,\"disabled\":false,\"overwrite\":true}");
         assertThat(zkRegCenter.get("/test"), is("test_update"));
         assertThat(zkRegCenter.get("/persist/new"), is("new_value"));
     }

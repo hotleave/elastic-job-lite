@@ -22,6 +22,10 @@ import com.google.common.base.Strings;
 import io.elasticjob.lite.api.JobType;
 import io.elasticjob.lite.config.LiteJobConfiguration;
 import io.elasticjob.lite.config.dataflow.DataflowJobConfiguration;
+import io.elasticjob.lite.config.job.CalendarIntervalJobSchedule;
+import io.elasticjob.lite.config.job.CronJobSchedule;
+import io.elasticjob.lite.config.job.DailyTimeIntervalJobSchedule;
+import io.elasticjob.lite.config.job.JobSchedule;
 import io.elasticjob.lite.config.script.ScriptJobConfiguration;
 import io.elasticjob.lite.executor.handler.JobProperties;
 import io.elasticjob.lite.internal.config.LiteJobConfigurationGsonFactory;
@@ -30,6 +34,8 @@ import io.elasticjob.lite.lifecycle.api.JobSettingsAPI;
 import io.elasticjob.lite.lifecycle.domain.JobSettings;
 import io.elasticjob.lite.reg.base.CoordinatorRegistryCenter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.stream.Collectors;
 
 /**
  * 作业配置的实现类.
@@ -63,7 +69,7 @@ public final class JobSettingsAPIImpl implements JobSettingsAPI {
         result.setJobType(liteJobConfig.getTypeConfig().getJobType().name());
         result.setJobClass(liteJobConfig.getTypeConfig().getJobClass());
         result.setShardingTotalCount(liteJobConfig.getTypeConfig().getCoreConfig().getShardingTotalCount());
-        result.setCron(liteJobConfig.getTypeConfig().getCoreConfig().getCron());
+        result.setSchedule(getScheduleSettings(liteJobConfig.getTypeConfig().getCoreConfig().getSchedule()));
         result.setShardingItemParameters(liteJobConfig.getTypeConfig().getCoreConfig().getShardingItemParameters());
         result.setJobParameter(liteJobConfig.getTypeConfig().getCoreConfig().getJobParameter());
         result.setMonitorExecution(liteJobConfig.isMonitorExecution());
@@ -79,6 +85,36 @@ public final class JobSettingsAPIImpl implements JobSettingsAPI {
         result.getJobProperties().put(JobProperties.JobPropertiesEnum.JOB_EXCEPTION_HANDLER.getKey(), 
                 liteJobConfig.getTypeConfig().getCoreConfig().getJobProperties().get(JobProperties.JobPropertiesEnum.JOB_EXCEPTION_HANDLER));
     }
+
+    private JobSettings.JobScheduleSettings getScheduleSettings(JobSchedule jobSchedule) {
+        JobSettings.JobScheduleSettings scheduleSettings = new JobSettings.JobScheduleSettings();
+        scheduleSettings.setType(jobSchedule.getType().name());
+
+        switch (jobSchedule.getType()) {
+            case CRON:
+                CronJobSchedule cronJobSchedule = (CronJobSchedule) jobSchedule;
+                scheduleSettings.setCron(cronJobSchedule.getCron());
+                break;
+            case DAILY_TIME:
+                DailyTimeIntervalJobSchedule dailyTimeIntervalJobSchedule = (DailyTimeIntervalJobSchedule) jobSchedule;
+                scheduleSettings.setInterval(dailyTimeIntervalJobSchedule.getInterval());
+                scheduleSettings.setIntervalUnit(dailyTimeIntervalJobSchedule.getIntervalUnit().name());
+                scheduleSettings.setStartTimeOfDay(JobSettings.TimeOfDay.valueOf(dailyTimeIntervalJobSchedule.getStartTimeOfDay()));
+                scheduleSettings.setEndTimeOfDay(JobSettings.TimeOfDay.valueOf(dailyTimeIntervalJobSchedule.getEndTimeOfDay()));
+                scheduleSettings.setDaysOfWeek(dailyTimeIntervalJobSchedule.getDaysOfWeek() == null ? null : dailyTimeIntervalJobSchedule.getDaysOfWeek().stream().map(String::valueOf).collect(Collectors.joining(",")));
+                break;
+            case CALENDAR:
+                CalendarIntervalJobSchedule calendarIntervalJobSchedule = (CalendarIntervalJobSchedule) jobSchedule;
+                scheduleSettings.setInterval(calendarIntervalJobSchedule.getInterval());
+                scheduleSettings.setIntervalUnit(calendarIntervalJobSchedule.getIntervalUnit().name());
+                scheduleSettings.setTimeZone(calendarIntervalJobSchedule.getTimeZone().getID());
+                break;
+            default:
+                throw new IllegalStateException("un-handled switch case: ScheduleType." + jobSchedule.getType());
+        }
+
+        return scheduleSettings;
+    }
     
     private void buildDataflowJobSettings(final JobSettings result, final DataflowJobConfiguration config) {
         result.setStreamingProcess(config.isStreamingProcess());
@@ -91,7 +127,7 @@ public final class JobSettingsAPIImpl implements JobSettingsAPI {
     @Override
     public void updateJobSettings(final JobSettings jobSettings) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(jobSettings.getJobName()), "jobName can not be empty.");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(jobSettings.getCron()), "cron can not be empty.");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(jobSettings.getCron()) || jobSettings.getSchedule() != null, "cron or schedule can not be both empty.");
         Preconditions.checkArgument(jobSettings.getShardingTotalCount() > 0, "shardingTotalCount should larger than zero.");
         JobNodePath jobNodePath = new JobNodePath(jobSettings.getJobName());
         regCenter.update(jobNodePath.getConfigNodePath(), LiteJobConfigurationGsonFactory.toJsonForObject(jobSettings));

@@ -208,7 +208,13 @@ function renderJob(data) {
     $("#job-type").attr("value", data.jobType);
     $("#job-class").attr("value", data.jobClass);
     $("#sharding-total-count").attr("value", data.shardingTotalCount);
-    $("#cron").attr("value", data.cron);
+    $("#job-schedule-type").val(data.schedule.type).change();
+    $("#job-schedule-cron").val(data.schedule.cron);
+    $("#job-schedule-interval").val(data.schedule.interval);
+    $("#job-schedule-interval-unit").val(data.schedule.intervalUnit);
+    $("#job-schedule-start-time-of-day").val(getTimeOfDayString(data.schedule.startTimeOfDay));
+    $("#job-schedule-end-time-of-day").val(getTimeOfDayString(data.schedule.endTimeOfDay));
+    $("#job-schedule-timezone").val(data.schedule.timeZone);
     $("#sharding-item-parameters").text(data.shardingItemParameters);
     $("#job-parameter").attr("value", data.jobParameter);
     $("#monitor-execution").attr("checked", data.monitorExecution);
@@ -229,4 +235,19 @@ function renderJob(data) {
     if ("SCRIPT" === $("#job-type").val()) {
         $("#script-commandLine-group").show();
     }
+    if (data.schedule.daysOfWeek) {
+        $.each(data.schedule.daysOfWeek.split(","), function(index, value) {
+            $("input[name=daysOfWeek][value=" + value + "]").prop("checked", true);
+        });
+    }
+}
+
+function getTimeOfDayString(timeOfDay) {
+    if (timeOfDay) {
+        return [padZero(timeOfDay.hour), padZero(timeOfDay.minute), padZero(timeOfDay.second)].join(":");
+    }
+}
+
+function padZero(num) {
+    return num < 10 ? '0' + num : num;
 }

@@ -3,6 +3,7 @@ $(function() {
     validate();
     bindSubmitJobSettingsForm();
     bindResetForm();
+    bindScheduleTypeChange();
 });
 
 function tooltipLocale(){
@@ -25,6 +26,48 @@ function getJobParams() {
     return jobParams;
 }
 
+function getTimeOfDay(timeOfDay) {
+    if (!timeOfDay) return;
+
+    var values = timeOfDay.split(":");
+    return { hour: values[0], minute: values[1], second: values[2] }
+}
+
+function getScheduleParams() {
+    var type = $("#job-schedule-type").val();
+    var cron = $("#job-schedule-cron").val();
+    var interval = $("#job-schedule-interval").val();
+    var intervalUnit = $("#job-schedule-interval-unit").val();
+    var timeZone = $("#job-schedule-timezone").val();
+    var startTimeOfDay = $("#job-schedule-start-time-of-day").val();
+    var endTimeOfDay = $("#job-schedule-end-time-of-day").val();
+    var daysOfWeek = $('input[name=daysOfWeek]:checked').map(function (index, value) {
+        return $(value).val()
+    }).toArray().join(",");
+    var params = {};
+
+    switch (type) {
+        case "CRON":
+            params = {cron: cron};
+            break;
+        case "DAILY_TIME":
+            params = {
+                interval: interval,
+                intervalUnit: intervalUnit,
+                startTimeOfDay: getTimeOfDay(startTimeOfDay),
+                endTimeOfDay: getTimeOfDay(endTimeOfDay),
+                daysOfWeek: daysOfWeek
+            };
+            break;
+        case "CALENDAR":
+            params = {interval: interval, intervalUnit: intervalUnit, timeZone: timeZone};
+            break;
+    }
+
+    params.type = type;
+    return params;
+}
+
 function bindSubmitJobSettingsForm() {
     $("#update-job-info-btn").on("click", function(){
         var bootstrapValidator = $("#job-config-form").data("bootstrapValidator");
@@ -35,7 +78,7 @@ function bindSubmitJobSettingsForm() {
             var jobClass = $("#job-class").val();
             var shardingTotalCount = $("#sharding-total-count").val();
             var jobParameter = $("#job-parameter").val();
-            var cron = $("#cron").val();
+            var schedule = getScheduleParams();
             var streamingProcess = $("#streaming-process").prop("checked");
             var maxTimeDiffSeconds = $("#max-time-diff-seconds").val();
             var monitorPort = $("#monitor-port").val();
@@ -54,7 +97,7 @@ function bindSubmitJobSettingsForm() {
             var jobExceptionHandler = $("#job-exception-handler").val();
             var description = $("#description").val();
             var reconcileIntervalMinutes = $("#reconcile-interval-minutes").val();
-            var postJson = {jobName: jobName, jobType : jobType, jobClass : jobClass, shardingTotalCount: shardingTotalCount, jobParameter: jobParameter, cron: cron, streamingProcess: streamingProcess, maxTimeDiffSeconds: maxTimeDiffSeconds, monitorPort: monitorPort, monitorExecution: monitorExecution, failover: failover, misfire: misfire, shardingItemParameters: shardingItemParameters, jobShardingStrategyClass: jobShardingStrategyClass, jobProperties: {"executor_service_handler": executorServiceHandler, "job_exception_handler": jobExceptionHandler}, description: description, scriptCommandLine: scriptCommandLine, reconcileIntervalMinutes:reconcileIntervalMinutes};
+            var postJson = {jobName: jobName, jobType : jobType, jobClass : jobClass, shardingTotalCount: shardingTotalCount, jobParameter: jobParameter, schedule: schedule, streamingProcess: streamingProcess, maxTimeDiffSeconds: maxTimeDiffSeconds, monitorPort: monitorPort, monitorExecution: monitorExecution, failover: failover, misfire: misfire, shardingItemParameters: shardingItemParameters, jobShardingStrategyClass: jobShardingStrategyClass, jobProperties: {"executor_service_handler": executorServiceHandler, "job_exception_handler": jobExceptionHandler}, description: description, scriptCommandLine: scriptCommandLine, reconcileIntervalMinutes:reconcileIntervalMinutes};
             var jobParams = getJobParams();
             if (jobParams.monitorExecution !== monitorExecution || jobParams.failover !== failover || jobParams.misfire !== misfire) {
                 showUpdateConfirmModal();
@@ -149,4 +192,44 @@ function bindResetForm() {
     $("#reset").click(function() {
         $("#job-config-form").data("bootstrapValidator").resetForm();
     });
+}
+
+function bindScheduleTypeChange() {
+    var intervalUnitOptions = [
+        { label: "毫秒", value: "MILLISECOND" },
+        { label: "秒", value: "SECOND" },
+        { label: "分钟", value: "MINUTE" },
+        { label: "小时", value: "HOUR" },
+        { label: "天", value: "DAY" },
+        { label: "周", value: "WEEK" },
+        { label: "月", value: "MONTH" },
+        { label: "年", value: "YEAR" }
+    ];
+    var toggleIntervalUnitOptions = function(options) {
+        var $intervalUnit = $("#job-schedule-interval-unit");
+        $intervalUnit.empty();
+        $.each(options, function (k, v) {
+            $intervalUnit.append($("<option/>").attr("value", v.value).text(v.label));
+        });
+    };
+
+    $("#job-schedule-type").change(function () {
+        var val = $(this).val();
+        switch (val) {
+            case "CRON":
+                $("#interval-config-row, #daily-config-row, #daily-config-weekday").hide();
+                $("#job-cron-config").show();
+                break;
+            case "DAILY_TIME":
+                toggleIntervalUnitOptions(intervalUnitOptions.slice(1, 4));
+                $("#interval-config-row, #daily-config-row, #daily-config-weekday").show();
+                $("#job-cron-config, #job-timezone-config").hide();
+                break;
+            case "CALENDAR":
+                toggleIntervalUnitOptions(intervalUnitOptions);
+                $("#interval-config-row, #job-timezone-config").show();
+                $("#job-cron-config, #daily-config-row, #daily-config-weekday").hide();
+                break;
+        }
+    }).change();
 }

@@ -18,6 +18,7 @@
 package io.elasticjob.lite.internal.config;
 
 import io.elasticjob.lite.api.strategy.JobInstance;
+import io.elasticjob.lite.config.JobCoreConfiguration;
 import io.elasticjob.lite.event.JobEventBus;
 import io.elasticjob.lite.fixture.LiteJsonConstants;
 import io.elasticjob.lite.internal.schedule.JobRegistry;
@@ -27,11 +28,13 @@ import io.elasticjob.lite.reg.base.CoordinatorRegistryCenter;
 import org.apache.curator.framework.recipes.cache.TreeCacheEvent.Type;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.unitils.util.ReflectionUtils;
 
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -60,24 +63,24 @@ public final class RescheduleListenerManagerTest {
     @Test
     public void assertStart() {
         rescheduleListenerManager.start();
-        verify(jobNodeStorage).addDataListener(ArgumentMatchers.<RescheduleListenerManager.CronSettingAndJobEventChangedJobListener>any());
+        verify(jobNodeStorage).addDataListener(ArgumentMatchers.<RescheduleListenerManager.JobSettingAndJobEventChangedJobListener>any());
     }
     
     @Test
     public void assertCronSettingChangedJobListenerWhenIsNotCronPath() {
-        rescheduleListenerManager.new CronSettingAndJobEventChangedJobListener().dataChanged("/test_job/config/other", Type.NODE_ADDED, LiteJsonConstants.getJobJson());
+        rescheduleListenerManager.new JobSettingAndJobEventChangedJobListener().dataChanged("/test_job/config/other", Type.NODE_ADDED, LiteJsonConstants.getJobJson());
         verify(jobScheduleController, times(0)).rescheduleJob(ArgumentMatchers.<String>any());
     }
     
     @Test
     public void assertCronSettingChangedJobListenerWhenIsCronPathButNotUpdate() {
-        rescheduleListenerManager.new CronSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_ADDED, LiteJsonConstants.getJobJson());
+        rescheduleListenerManager.new JobSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_ADDED, LiteJsonConstants.getJobJson());
         verify(jobScheduleController, times(0)).rescheduleJob(ArgumentMatchers.<String>any());
     }
     
     @Test
     public void assertCronSettingChangedJobListenerWhenIsCronPathAndUpdateButCannotFindJob() {
-        rescheduleListenerManager.new CronSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_UPDATED, LiteJsonConstants.getJobJson());
+        rescheduleListenerManager.new JobSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_UPDATED, LiteJsonConstants.getJobJson());
         verify(jobScheduleController, times(0)).rescheduleJob(ArgumentMatchers.<String>any());
     }
     
@@ -85,8 +88,8 @@ public final class RescheduleListenerManagerTest {
     public void assertCronSettingChangedJobListenerWhenIsCronPathAndUpdateAndFindJob() {
         JobRegistry.getInstance().addJobInstance("test_job", new JobInstance("127.0.0.1@-@0"));
         JobRegistry.getInstance().registerJob("test_job", jobScheduleController, regCenter);
-        rescheduleListenerManager.new CronSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_UPDATED, LiteJsonConstants.getJobJson());
-        verify(jobScheduleController).rescheduleJob("0/1 * * * * ?");
+        rescheduleListenerManager.new JobSettingAndJobEventChangedJobListener().dataChanged("/test_job/config", Type.NODE_UPDATED, LiteJsonConstants.getJobJson());
+        verify(jobScheduleController).rescheduleJob(argThat((ArgumentMatcher<JobCoreConfiguration>) configuration -> "0/1 * * * * ?".equals(configuration.getCron())));
         JobRegistry.getInstance().shutdown("test_job");
     }
 }
