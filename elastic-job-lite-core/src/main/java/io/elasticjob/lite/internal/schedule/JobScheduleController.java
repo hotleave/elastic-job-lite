@@ -17,11 +17,12 @@
 
 package io.elasticjob.lite.internal.schedule;
 
+import com.google.common.base.Strings;
 import io.elasticjob.lite.config.JobCoreConfiguration;
-import io.elasticjob.lite.config.job.CalendarIntervalJobSchedule;
-import io.elasticjob.lite.config.job.CronJobSchedule;
-import io.elasticjob.lite.config.job.DailyTimeIntervalJobSchedule;
-import io.elasticjob.lite.config.job.JobSchedule;
+import io.elasticjob.lite.config.schedule.CalendarIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.CronJobSchedule;
+import io.elasticjob.lite.config.schedule.DailyTimeIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.JobSchedule;
 import io.elasticjob.lite.exception.JobSystemException;
 import lombok.RequiredArgsConstructor;
 import org.quartz.CalendarIntervalScheduleBuilder;
@@ -37,8 +38,9 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 
-import java.util.Set;
+import java.util.Arrays;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 /**
  * 作业调度控制器.
@@ -123,17 +125,17 @@ public final class JobScheduleController {
                 .withInterval(schedule.getInterval(), schedule.getIntervalUnit())
                 .withMisfireHandlingInstructionDoNothing();
 
-        Set<Integer> daysOfWeek = schedule.getDaysOfWeek();
-        if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
-            scheduleBuilder.onDaysOfTheWeek(daysOfWeek);
+        String daysOfWeek = schedule.getDaysOfWeek();
+        if (!Strings.isNullOrEmpty(daysOfWeek)) {
+            scheduleBuilder.onDaysOfTheWeek(Arrays.stream(daysOfWeek.split(",")).map(Integer::valueOf).collect(Collectors.toSet()));
         }
 
-        TimeOfDay startTime = schedule.getStartTimeOfDay();
+        TimeOfDay startTime = getTimeOfDay(schedule.getStartTimeOfDay());
         if (startTime != null) {
             scheduleBuilder.startingDailyAt(startTime);
         }
 
-        TimeOfDay endTime = schedule.getEndTimeOfDay();
+        TimeOfDay endTime = getTimeOfDay(schedule.getEndTimeOfDay());
         if (endTime != null) {
             scheduleBuilder.endingDailyAt(endTime);
         }
@@ -146,9 +148,11 @@ public final class JobScheduleController {
                 .withInterval(schedule.getInterval(), schedule.getIntervalUnit())
                 .withMisfireHandlingInstructionDoNothing();
 
-        TimeZone timeZone = schedule.getTimeZone();
-        if (timeZone != null) {
-            scheduleBuilder.inTimeZone(timeZone);
+        if (!Strings.isNullOrEmpty(schedule.getTimeZone())) {
+            TimeZone timeZone = TimeZone.getTimeZone(schedule.getTimeZone());
+            if (timeZone != null) {
+                scheduleBuilder.inTimeZone(timeZone);
+            }
         }
 
         return scheduleBuilder;
@@ -217,5 +221,19 @@ public final class JobScheduleController {
         } catch (final SchedulerException ex) {
             throw new JobSystemException(ex);
         }
+    }
+
+    private TimeOfDay getTimeOfDay(String value) {
+        if (Strings.isNullOrEmpty(value)) {
+            return null;
+        }
+
+        String[] values = value.split(":");
+        if (values.length != 3) {
+            throw new IllegalArgumentException("startTimeOfDay or endTimeOfDay must match the format of HH:mm:ss");
+        }
+        int[] params = Arrays.stream(values).mapToInt(Integer::parseInt).toArray();
+
+        return new TimeOfDay(params[0], params[1], params[2]);
     }
 }

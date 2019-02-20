@@ -1,11 +1,8 @@
-package io.elasticjob.lite.config.job;
+package io.elasticjob.lite.config.schedule;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.quartz.DateBuilder.IntervalUnit;
-import org.quartz.TimeOfDay;
-
-import java.util.Set;
 
 /**
  * @author hotleave
@@ -19,10 +16,14 @@ public class DailyTimeIntervalJobSchedule implements JobSchedule {
      */
     private final Integer interval;
     private final IntervalUnit intervalUnit;
-
-    private Set<Integer> daysOfWeek;
-    private TimeOfDay startTimeOfDay;
-    private TimeOfDay endTimeOfDay;
+    /**
+     * 星期
+     *
+     * 1-7 => 周日到周六
+     */
+    private String daysOfWeek;
+    private String startTimeOfDay;
+    private String endTimeOfDay;
 
     @Override
     public ScheduleType getType() {

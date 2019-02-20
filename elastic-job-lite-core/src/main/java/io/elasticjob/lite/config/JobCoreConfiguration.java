@@ -19,20 +19,18 @@ package io.elasticjob.lite.config;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import io.elasticjob.lite.config.job.CalendarIntervalJobSchedule;
-import io.elasticjob.lite.config.job.CronJobSchedule;
-import io.elasticjob.lite.config.job.DailyTimeIntervalJobSchedule;
-import io.elasticjob.lite.config.job.JobSchedule;
+import io.elasticjob.lite.config.schedule.CalendarIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.CronJobSchedule;
+import io.elasticjob.lite.config.schedule.DailyTimeIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.JobSchedule;
 import io.elasticjob.lite.executor.handler.JobProperties;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.quartz.DateBuilder;
-import org.quartz.TimeOfDay;
 
 import java.util.Arrays;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -68,6 +66,7 @@ public final class JobCoreConfiguration {
      *
      * @return cron
      */
+    // TODO: 2019-02-22 remove this
     public String getCron() {
         if (schedule instanceof CronJobSchedule) {
             return ((CronJobSchedule) schedule).getCron();
@@ -228,38 +227,38 @@ public final class JobCoreConfiguration {
             super(jobName, new DailyTimeIntervalJobSchedule(interval, intervalUnit), shardingTotalCount);
         }
 
-        public DailyTimeIntervalJobBuilder daysOfWeek(Set<Integer> daysOfWeek) {
+        public DailyTimeIntervalJobBuilder daysOfWeek(String daysOfWeek) {
             schedule.setDaysOfWeek(daysOfWeek);
 
             return this;
         }
 
         public DailyTimeIntervalJobBuilder daysOfWeek(Integer... daysOfWeek) {
-            schedule.setDaysOfWeek(Arrays.stream(daysOfWeek).collect(Collectors.toSet()));
+            schedule.setDaysOfWeek(Arrays.stream(daysOfWeek).map(String::valueOf).collect(Collectors.joining(",")));
 
             return this;
         }
 
-        public DailyTimeIntervalJobBuilder startTimeOfDay(TimeOfDay startTimeOfDay) {
+        public DailyTimeIntervalJobBuilder startTimeOfDay(String startTimeOfDay) {
             schedule.setStartTimeOfDay(startTimeOfDay);
 
             return this;
         }
 
         public DailyTimeIntervalJobBuilder startTimeOfDay(int hour, int minute, int second) {
-            schedule.setStartTimeOfDay(new TimeOfDay(hour, minute, second));
+            schedule.setStartTimeOfDay(String.format("%02d:%02d:%02d", hour, minute, second));
 
             return this;
         }
 
-        public DailyTimeIntervalJobBuilder endTimeOfDay(TimeOfDay endTimeOfDay) {
+        public DailyTimeIntervalJobBuilder endTimeOfDay(String endTimeOfDay) {
             schedule.setEndTimeOfDay(endTimeOfDay);
 
             return this;
         }
 
         public DailyTimeIntervalJobBuilder endTimeOfDay(int hour, int minute, int second) {
-            schedule.setEndTimeOfDay(new TimeOfDay(hour, minute, second));
+            schedule.setEndTimeOfDay(String.format("%02d:%02d:%02d", hour, minute, second));
 
             return this;
         }
@@ -271,13 +270,13 @@ public final class JobCoreConfiguration {
         }
 
         public CalendarIntervalJobBuilder timeZone(TimeZone timeZone) {
-            schedule.setTimeZone(timeZone);
+            schedule.setTimeZone(timeZone.getID());
 
             return this;
         }
 
-        public CalendarIntervalJobBuilder timeZone(String zoneId) {
-            schedule.setTimeZone(TimeZone.getTimeZone(zoneId));
+        public CalendarIntervalJobBuilder timeZone(String timeZone) {
+            schedule.setTimeZone(timeZone);
 
             return this;
         }

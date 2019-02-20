@@ -17,6 +17,7 @@
 
 package io.elasticjob.lite.internal.failover;
 
+import io.elasticjob.lite.api.strategy.JobInstance;
 import io.elasticjob.lite.config.LiteJobConfiguration;
 import io.elasticjob.lite.internal.config.ConfigurationNode;
 import io.elasticjob.lite.internal.config.ConfigurationService;
@@ -77,7 +78,8 @@ public final class FailoverListenerManager extends AbstractListenerManager {
         protected void dataChanged(final String path, final Type eventType, final String data) {
             if (isFailoverEnabled() && Type.NODE_REMOVED == eventType && instanceNode.isInstancePath(path)) {
                 String jobInstanceId = path.substring(instanceNode.getInstanceFullPath().length() + 1);
-                if (jobInstanceId.equals(JobRegistry.getInstance().getJobInstance(jobName).getJobInstanceId())) {
+                JobInstance jobInstance = JobRegistry.getInstance().getJobInstance(jobName);
+                if (jobInstance != null && jobInstanceId.equals(jobInstance.getJobInstanceId())) {
                     return;
                 }
                 List<Integer> failoverItems = failoverService.getFailoverItems(jobInstanceId);

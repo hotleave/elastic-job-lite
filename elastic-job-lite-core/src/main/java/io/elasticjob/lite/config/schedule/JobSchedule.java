@@ -1,4 +1,4 @@
-package io.elasticjob.lite.config.job;
+package io.elasticjob.lite.config.schedule;
 
 import org.quartz.CalendarIntervalTrigger;
 import org.quartz.CronTrigger;

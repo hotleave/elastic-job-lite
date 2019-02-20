@@ -17,7 +17,8 @@
 
 package io.elasticjob.lite.lifecycle.domain;
 
-import io.elasticjob.lite.config.job.JobSchedule;
+import io.elasticjob.lite.config.schedule.CronJobSchedule;
+import io.elasticjob.lite.config.schedule.JobSchedule;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -39,14 +40,21 @@ public final class JobBriefInfo implements Serializable, Comparable<JobBriefInfo
     private JobStatus status;
     
     private String description;
-    
-    private String cron;
 
     private JobSchedule schedule;
     
     private int instanceCount;
     
     private int shardingTotalCount;
+
+    // TODO: 2019-02-22 remove this
+    public String getCron() {
+        if (schedule instanceof CronJobSchedule) {
+            return ((CronJobSchedule) schedule).getCron();
+        }
+
+        throw new IllegalStateException("Job does not has cron property: " + schedule.getType());
+    }
     
     @Override
     public int compareTo(final JobBriefInfo o) {

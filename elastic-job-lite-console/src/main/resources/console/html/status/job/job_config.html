@@ -52,7 +52,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-4">
+                <div id="job-sharding-config" class="col-sm-4">
                     <div class="form-group">
                         <label for="sharding-total-count" class="col-sm-6 control-label" data-lang="job-sharding-total-count"></label>
                         <div class="col-sm-6">
@@ -91,7 +91,9 @@
                     <div class="form-group">
                         <label for="job-schedule-timezone" class="col-sm-6 control-label" data-lang="job-schedule-timezone"></label>
                         <div class="col-sm-6">
-                            <input type="text" id="job-schedule-timezone" name="timeZone" class="form-control" data-toggle="tooltip" data-placement="bottom"/>
+                            <select id="job-schedule-timezone" name="timeZone" class="form-control" data-toggle="tooltip" data-placement="bottom">
+                                <option value="">系统默认</option>
+                            </select>
                         </div>
                     </div>
                 </div>

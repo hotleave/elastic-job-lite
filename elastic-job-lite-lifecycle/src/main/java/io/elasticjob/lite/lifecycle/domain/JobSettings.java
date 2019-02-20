@@ -43,8 +43,6 @@ public final class JobSettings implements Serializable {
 
     private String jobClass;
 
-    private String cron;
-
     private JobScheduleSettings schedule;
 
     private int shardingTotalCount;
@@ -75,6 +73,15 @@ public final class JobSettings implements Serializable {
 
     private int reconcileIntervalMinutes;
 
+    // TODO: 2019-02-22 remove this
+    public String getCron() {
+        if (schedule != null && "CRON".equals(schedule.getType())) {
+            return schedule.getCron();
+        }
+
+        return null;
+    }
+
     @Data
     public static class JobScheduleSettings {
         private String type;
@@ -82,28 +89,15 @@ public final class JobSettings implements Serializable {
         private Integer interval;
         private String intervalUnit;
         private String daysOfWeek;
-        private TimeOfDay startTimeOfDay;
-        private TimeOfDay endTimeOfDay;
+        private String startTimeOfDay;
+        private String endTimeOfDay;
         private String timeZone;
-    }
 
-    @Data
-    public static class TimeOfDay {
-        private Integer hour;
-        private Integer minute;
-        private Integer second;
+        public static JobScheduleSettings cronSchdule(String cron) {
+            JobScheduleSettings settings = new JobScheduleSettings();
+            settings.setCron(cron);
 
-        public static TimeOfDay valueOf(org.quartz.TimeOfDay source) {
-            if (source == null) {
-                return null;
-            }
-
-            TimeOfDay result = new TimeOfDay();
-            result.hour = source.getHour();
-            result.minute = source.getMinute();
-            result.second = source.getSecond();
-
-            return result;
+            return settings;
         }
     }
 }

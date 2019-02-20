@@ -33,11 +33,11 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.*;
 
 public final class ZookeeperRegistryCenterModifyTest {
-    
+
     private static final ZookeeperConfiguration ZOOKEEPER_CONFIGURATION = new ZookeeperConfiguration(EmbedTestingServer.getConnectionString(), ZookeeperRegistryCenterModifyTest.class.getName());
-    
+
     private static ZookeeperRegistryCenter zkRegCenter;
-    
+
     @BeforeClass
     public static void setUp() {
         EmbedTestingServer.start();
@@ -46,15 +46,16 @@ public final class ZookeeperRegistryCenterModifyTest {
         zkRegCenter.init();
         ZookeeperRegistryCenterTestUtil.persist(zkRegCenter);
     }
-    
+
     @AfterClass
     public static void tearDown() {
         zkRegCenter.close();
     }
-    
+
     @Test
     public void assertPersist() {
-        zkRegCenter.persist("/myTestJob/config", "{\"jobName\":\"generateReportIvrJob\",\"jobClass\":\"com.zhicheng.sky.job.GenerateReportIvrJob\",\"jobType\":\"SIMPLE\",\"cron\":\"0 0 1 * * ?\",\"shardingTotalCount\":1,\"shardingItemParameters\":\"\",\"jobParameter\":\"\",\"failover\":false,\"misfire\":true,\"description\":\"天迹-拉取通话明细-数据拉取\",\"jobProperties\":{\"job_exception_handler\":\"com.dangdang.ddframe.job.executor.handler.impl.DefaultJobExceptionHandler\",\"executor_service_handler\":\"com.dangdang.ddframe.job.executor.handler.impl.DefaultExecutorServiceHandler\"},\"monitorExecution\":true,\"maxTimeDiffSeconds\":-1,\"monitorPort\":-1,\"jobShardingStrategyClass\":\"\",\"reconcileIntervalMinutes\":10,\"disabled\":false,\"overwrite\":true}");
+        zkRegCenter.persist("/test", "test_update");
+        zkRegCenter.persist("/persist/new", "new_value");
         assertThat(zkRegCenter.get("/test"), is("test_update"));
         assertThat(zkRegCenter.get("/persist/new"), is("new_value"));
     }

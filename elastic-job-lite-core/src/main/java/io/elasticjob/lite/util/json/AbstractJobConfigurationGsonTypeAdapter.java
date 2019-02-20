@@ -27,23 +27,18 @@ import io.elasticjob.lite.config.JobCoreConfiguration;
 import io.elasticjob.lite.config.JobRootConfiguration;
 import io.elasticjob.lite.config.JobTypeConfiguration;
 import io.elasticjob.lite.config.dataflow.DataflowJobConfiguration;
-import io.elasticjob.lite.config.job.CalendarIntervalJobSchedule;
-import io.elasticjob.lite.config.job.CronJobSchedule;
-import io.elasticjob.lite.config.job.DailyTimeIntervalJobSchedule;
-import io.elasticjob.lite.config.job.JobSchedule;
+import io.elasticjob.lite.config.schedule.CalendarIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.CronJobSchedule;
+import io.elasticjob.lite.config.schedule.DailyTimeIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.JobSchedule;
 import io.elasticjob.lite.config.script.ScriptJobConfiguration;
 import io.elasticjob.lite.config.simple.SimpleJobConfiguration;
 import io.elasticjob.lite.executor.handler.JobProperties;
 import org.quartz.DateBuilder;
-import org.quartz.TimeOfDay;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 /**
  * 作业配置的Json转换适配器.
@@ -229,11 +224,19 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
                 DailyTimeIntervalJobSchedule dailyTimeIntervalJobSchedule = (DailyTimeIntervalJobSchedule) jobSchedule;
                 scheduleOut.name("interval").value(dailyTimeIntervalJobSchedule.getInterval())
                         .name("intervalUnit").value(dailyTimeIntervalJobSchedule.getIntervalUnit().name());
-                if (dailyTimeIntervalJobSchedule.getDaysOfWeek() != null && !dailyTimeIntervalJobSchedule.getDaysOfWeek().isEmpty()) {
-                    scheduleOut.name("daysOfWeek").value(dailyTimeIntervalJobSchedule.getDaysOfWeek().stream().map(String::valueOf).collect(Collectors.joining()));
+
+                String daysOfWeek = dailyTimeIntervalJobSchedule.getDaysOfWeek();
+                if (!Strings.isNullOrEmpty(daysOfWeek)) {
+                    scheduleOut.name("daysOfWeek").value(daysOfWeek);
                 }
-                writeTimeOfDay(scheduleOut, "startTimeOfDay", dailyTimeIntervalJobSchedule.getStartTimeOfDay());
-                writeTimeOfDay(scheduleOut, "endTimeOfDay", dailyTimeIntervalJobSchedule.getEndTimeOfDay());
+                String startTimeOfDay = dailyTimeIntervalJobSchedule.getStartTimeOfDay();
+                if (!Strings.isNullOrEmpty(startTimeOfDay)) {
+                    scheduleOut.name("startTimeOfDay").value(startTimeOfDay);
+                }
+                String endTimeOfDay = dailyTimeIntervalJobSchedule.getEndTimeOfDay();
+                if (!Strings.isNullOrEmpty(endTimeOfDay)) {
+                    scheduleOut.name("endTimeOfDay").value(endTimeOfDay);
+                }
 
                 scheduleOut.endObject();
                 break;
@@ -245,7 +248,7 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
                         .name("intervalUnit").value(calendarIntervalJobSchedule.getIntervalUnit().name());
 
                 if (calendarIntervalJobSchedule.getTimeZone() != null) {
-                    scheduleOut.name("timeZone").value(calendarIntervalJobSchedule.getTimeZone().getID());
+                    scheduleOut.name("timeZone").value(calendarIntervalJobSchedule.getTimeZone());
                 }
 
                 scheduleOut.endObject();
@@ -256,16 +259,6 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
 
     }
 
-    private void writeTimeOfDay(JsonWriter scheduleOut, String name, TimeOfDay timeOfDay) throws IOException {
-        if (timeOfDay != null) {
-            scheduleOut.name(name).beginObject()
-                    .name("hour").value(timeOfDay.getHour())
-                    .name("minute").value(timeOfDay.getMinute())
-                    .name("seconds").value(timeOfDay.getSecond())
-                    .endObject();
-        }
-    }
-
     private JobSchedule readJobSchedule(JsonReader in) throws IOException {
         JobSchedule.ScheduleType type = null;
         String cron = null;
@@ -273,8 +266,8 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
         DateBuilder.IntervalUnit intervalUnit = null;
         String daysOfWeek = null;
         String timeZoneId = null;
-        TimeOfDay startTimeOfDay = null;
-        TimeOfDay endTimeOfDay = null;
+        String startTimeOfDay = null;
+        String endTimeOfDay = null;
 
         in.beginObject();
         while (in.hasNext()) {
@@ -296,10 +289,10 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
                     daysOfWeek = in.nextString();
                     break;
                 case "startTimeOfDay":
-                    startTimeOfDay = readTimeOfDay(in);
+                    startTimeOfDay = in.nextString();
                     break;
                 case "endTimeOfDay":
-                    endTimeOfDay = readTimeOfDay(in);
+                    endTimeOfDay = in.nextString();
                     break;
                 case "timeZone":
                     timeZoneId = in.nextString();
@@ -321,8 +314,7 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
                 DailyTimeIntervalJobSchedule dailyTimeIntervalJobSchedule = new DailyTimeIntervalJobSchedule(interval, intervalUnit);
 
                 if (!Strings.isNullOrEmpty(daysOfWeek)) {
-                    Set<Integer> daysOfWeekSet = Arrays.stream(daysOfWeek.split(",")).map(Integer::valueOf).collect(Collectors.toSet());
-                    dailyTimeIntervalJobSchedule.setDaysOfWeek(daysOfWeekSet);
+                    dailyTimeIntervalJobSchedule.setDaysOfWeek(daysOfWeek);
                 }
                 dailyTimeIntervalJobSchedule.setStartTimeOfDay(startTimeOfDay);
                 dailyTimeIntervalJobSchedule.setEndTimeOfDay(endTimeOfDay);
@@ -331,40 +323,13 @@ public abstract class AbstractJobConfigurationGsonTypeAdapter<T extends JobRootC
             case CALENDAR:
                 CalendarIntervalJobSchedule calendarIntervalJobSchedule = new CalendarIntervalJobSchedule(interval, intervalUnit);
                 if (!Strings.isNullOrEmpty(timeZoneId)) {
-                    calendarIntervalJobSchedule.setTimeZone(TimeZone.getTimeZone(timeZoneId));
+                    calendarIntervalJobSchedule.setTimeZone(timeZoneId);
                 }
 
                 return calendarIntervalJobSchedule;
             default:
                 throw new IllegalStateException("un-handled switch case ScheduleType." + type);
         }
-    }
-
-    private TimeOfDay readTimeOfDay(JsonReader in) throws IOException {
-        int hour = 0;
-        int minute = 0;
-        int second = 0;
-
-        in.beginObject();
-        while (in.hasNext()) {
-            String name = in.nextName();
-            switch (name) {
-                case "hour":
-                    hour = in.nextInt();
-                    break;
-                case "minute":
-                    minute = in.nextInt();
-                    break;
-                case "second":
-                    second = in.nextInt();
-                    break;
-                default:
-                    // do nothing
-            }
-        }
-        in.endObject();
-
-        return new TimeOfDay(hour, minute, second);
     }
 
     protected abstract void writeCustomized(final JsonWriter out, final T value) throws IOException;

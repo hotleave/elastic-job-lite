@@ -29,10 +29,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static io.elasticjob.lite.lifecycle.domain.JobSettings.JobScheduleSettings.cronSchdule;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,7 +99,7 @@ public class JobSettingsAPIImplTest {
         jobSettings.setShardingTotalCount(10);
         jobSettings.setMaxTimeDiffSeconds(-1);
         jobSettings.setMonitorExecution(true);
-        jobSettings.setCron("0/1 * * * * ?");
+        jobSettings.setSchedule(cronSchdule("0/1 * * * * ?"));
         jobSettings.setStreamingProcess(true);
         jobSettings.setFailover(false);
         jobSettings.setMisfire(true);
@@ -109,7 +108,7 @@ public class JobSettingsAPIImplTest {
         jobSettings.setReconcileIntervalMinutes(70);
         jobSettingsAPI.updateJobSettings(jobSettings);
         verify(regCenter).update("/test_job/config", "{\"jobName\":\"test_job\",\"jobClass\":\"io.elasticjob.lite.fixture.TestDataflowJob\","
-                + "\"cron\":\"0/1 * * * * ?\",\"shardingTotalCount\":10,\"monitorExecution\":true,\"streamingProcess\":true,"
+                + "\"schedule\":{\"cron\":\"0/1 * * * * ?\"},\"shardingTotalCount\":10,\"monitorExecution\":true,\"streamingProcess\":true,"
                 + "\"maxTimeDiffSeconds\":-1,\"monitorPort\":-1,\"failover\":false,\"misfire\":true,"
                 + "\"jobProperties\":{\"executor_service_handler\":\"" + DefaultExecutorServiceHandler.class.getCanonicalName() + "\","
                 + "\"job_exception_handler\":\"" + DefaultJobExceptionHandler.class.getCanonicalName() + "\"},\"reconcileIntervalMinutes\":70}");
@@ -126,7 +125,7 @@ public class JobSettingsAPIImplTest {
     public void assertUpdateJobSettingsIfCronIsEmpty() {
         JobSettings jobSettings = new JobSettings();
         jobSettings.setJobName("test_job");
-        jobSettings.setCron("");
+        jobSettings.setSchedule(cronSchdule(""));
         jobSettingsAPI.updateJobSettings(jobSettings);
     }
     
@@ -134,7 +133,7 @@ public class JobSettingsAPIImplTest {
     public void assertUpdateJobSettingsIfShardingTotalCountLessThanOne() {
         JobSettings jobSettings = new JobSettings();
         jobSettings.setJobName("test_job");
-        jobSettings.setCron("0/1 * * * * ?");
+        jobSettings.setSchedule(cronSchdule("0/1 * * * * ?"));
         jobSettings.setShardingTotalCount(0);
         jobSettingsAPI.updateJobSettings(jobSettings);
     }

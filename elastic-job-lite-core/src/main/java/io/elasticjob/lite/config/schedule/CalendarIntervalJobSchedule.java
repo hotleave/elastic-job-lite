@@ -1,10 +1,8 @@
-package io.elasticjob.lite.config.job;
+package io.elasticjob.lite.config.schedule;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.quartz.DateBuilder.IntervalUnit;
-
-import java.util.TimeZone;
 
 /**
  * @author hotleave
@@ -16,7 +14,7 @@ public class CalendarIntervalJobSchedule implements JobSchedule {
     private final Integer interval;
     private final IntervalUnit intervalUnit;
 
-    private TimeZone timeZone;
+    private String timeZone;
 
     @Override
     public ScheduleType getType() {
