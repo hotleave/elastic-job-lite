@@ -1,64 +1,135 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema xmlns="http://www.dangdang.com/schema/ddframe/job"
-        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-        xmlns:beans="http://www.springframework.org/schema/beans"
-        targetNamespace="http://www.dangdang.com/schema/ddframe/job"
-        elementFormDefault="qualified"
-        attributeFormDefault="unqualified">
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:beans="http://www.springframework.org/schema/beans"
+            targetNamespace="http://www.dangdang.com/schema/ddframe/job"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
     <xsd:import namespace="http://www.springframework.org/schema/beans"/>
-    
+
     <xsd:element name="listener">
         <xsd:complexType>
-            <xsd:attribute name="class" type="xsd:string" use="required" />
+            <xsd:attribute name="class" type="xsd:string" use="required"/>
         </xsd:complexType>
     </xsd:element>
     <xsd:element name="distributed-listener">
         <xsd:complexType>
-            <xsd:attribute name="class" type="xsd:string" use="required" />
-            <xsd:attribute name="started-timeout-milliseconds" type="xsd:string" use="required" />
-            <xsd:attribute name="completed-timeout-milliseconds" type="xsd:string" use="required" />
+            <xsd:attribute name="class" type="xsd:string" use="required"/>
+            <xsd:attribute name="started-timeout-milliseconds" type="xsd:string" use="required"/>
+            <xsd:attribute name="completed-timeout-milliseconds" type="xsd:string" use="required"/>
         </xsd:complexType>
     </xsd:element>
-    
+    <xsd:element name="cron-schedule">
+        <xsd:complexType>
+            <!--<xsd:attribute name="type" default="CRON"/>-->
+            <xsd:attribute name="cron" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="daily-time-schedule">
+        <xsd:complexType>
+            <!--<xsd:attribute name="type" default="DAILY_TIME"/>-->
+            <xsd:attribute name="interval" type="xsd:positiveInteger" use="required"/>
+            <xsd:attribute name="intervalUnit" use="required">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="SECOND"/>
+                        <xsd:enumeration value="MINUTE"/>
+                        <xsd:enumeration value="HOUR"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:attribute>
+            <xsd:attribute name="startTimeOfDay" default="00:00:00">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:time"/>
+                </xsd:simpleType>
+            </xsd:attribute>
+            <xsd:attribute name="endTimeOfDay" default="23:59:59">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:time">
+                        <xsd:maxInclusive value="23:59:59"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:attribute>
+            <xsd:attribute name="daysOfWeek" default="1,2,3,4,5,6,7">
+                <xsd:annotation>
+                    <xsd:documentation>On which week day to execute the job, from 1 to 7 equal to Sunday to Saturday, separated by comma.</xsd:documentation>
+                </xsd:annotation>
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:pattern value="[1-7](,[1-7]){0,6}"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="calendar-schedule">
+        <xsd:complexType>
+            <!--<xsd:attribute name="type" default="CALENDAR"/>-->
+            <xsd:attribute name="interval" type="xsd:positiveInteger" use="required"/>
+            <xsd:attribute name="intervalUnit" use="required">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="MILLISECOND"/>
+                        <xsd:enumeration value="SECOND"/>
+                        <xsd:enumeration value="MINUTE"/>
+                        <xsd:enumeration value="HOUR"/>
+                        <xsd:enumeration value="DAY"/>
+                        <xsd:enumeration value="WEEK"/>
+                        <xsd:enumeration value="MONTH"/>
+                        <xsd:enumeration value="YEAR"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:attribute>
+            <xsd:attribute name="timeZone" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:complexType name="base">
         <xsd:complexContent>
             <xsd:extension base="beans:identifiedType">
-                <xsd:all>
-                    <xsd:element ref="listener" minOccurs="0" maxOccurs="1" />
-                    <xsd:element ref="distributed-listener" minOccurs="0" maxOccurs="1" />
-                </xsd:all>
-                <xsd:attribute name="class" type="xsd:string" />
-                <xsd:attribute name="job-ref" type="xsd:string" />
-                <xsd:attribute name="registry-center-ref" type="xsd:string" use="required" />
-                <xsd:attribute name="cron" type="xsd:string" use="required" />
-                <xsd:attribute name="sharding-total-count" type="xsd:string" use="required" />
-                <xsd:attribute name="sharding-item-parameters" type="xsd:string" />
-                <xsd:attribute name="job-parameter" type="xsd:string" />
+                <xsd:sequence>
+                    <xsd:choice minOccurs="0">
+                        <xsd:element ref="cron-schedule"/>
+                        <xsd:element ref="daily-time-schedule"/>
+                        <xsd:element ref="calendar-schedule"/>
+                    </xsd:choice>
+                    <xsd:element ref="listener" minOccurs="0"/>
+                    <xsd:element ref="distributed-listener" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="class" type="xsd:string"/>
+                <xsd:attribute name="job-ref" type="xsd:string"/>
+                <xsd:attribute name="registry-center-ref" type="xsd:string" use="required"/>
+                <xsd:attribute name="cron" type="xsd:string"/>
+                <xsd:attribute name="sharding-total-count" type="xsd:string" use="required"/>
+                <xsd:attribute name="sharding-item-parameters" type="xsd:string"/>
+                <xsd:attribute name="job-parameter" type="xsd:string"/>
                 <xsd:attribute name="monitor-execution" type="xsd:string" default="true"/>
                 <xsd:attribute name="monitor-port" type="xsd:string" default="-1"/>
                 <xsd:attribute name="max-time-diff-seconds" type="xsd:string" default="-1"/>
                 <xsd:attribute name="failover" type="xsd:string" default="false"/>
                 <xsd:attribute name="reconcile-interval-minutes" type="xsd:int" default="10"/>
                 <xsd:attribute name="misfire" type="xsd:string" default="true"/>
-                <xsd:attribute name="job-sharding-strategy-class" type="xsd:string" />
-                <xsd:attribute name="description" type="xsd:string" />
+                <xsd:attribute name="job-sharding-strategy-class" type="xsd:string"/>
+                <xsd:attribute name="description" type="xsd:string"/>
                 <xsd:attribute name="disabled" type="xsd:string" default="false"/>
                 <xsd:attribute name="overwrite" type="xsd:string" default="false"/>
-                <xsd:attribute name="executor-service-handler" type="xsd:string" default="io.elasticjob.lite.executor.handler.impl.DefaultExecutorServiceHandler"/>
-                <xsd:attribute name="job-exception-handler" type="xsd:string" default="io.elasticjob.lite.executor.handler.impl.DefaultJobExceptionHandler"/>
-                <xsd:attribute name="event-trace-rdb-data-source" type="xsd:string" />
+                <xsd:attribute name="executor-service-handler" type="xsd:string"
+                               default="io.elasticjob.lite.executor.handler.impl.DefaultExecutorServiceHandler"/>
+                <xsd:attribute name="job-exception-handler" type="xsd:string"
+                               default="io.elasticjob.lite.executor.handler.impl.DefaultJobExceptionHandler"/>
+                <xsd:attribute name="event-trace-rdb-data-source" type="xsd:string"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
-    
+
     <xsd:element name="simple">
         <xsd:complexType>
             <xsd:complexContent>
-                <xsd:extension base="base" />
+                <xsd:extension base="base"/>
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
-    
+
     <xsd:element name="dataflow">
         <xsd:complexType>
             <xsd:complexContent>
@@ -68,12 +139,12 @@
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
-    
+
     <xsd:element name="script">
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="base">
-                    <xsd:attribute name="script-command-line" type="xsd:string" />
+                    <xsd:attribute name="script-command-line" type="xsd:string" use="required"/>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

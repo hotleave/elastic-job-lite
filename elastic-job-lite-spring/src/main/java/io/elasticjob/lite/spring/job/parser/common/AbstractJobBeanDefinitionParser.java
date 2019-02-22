@@ -20,6 +20,9 @@ package io.elasticjob.lite.spring.job.parser.common;
 import com.google.common.base.Strings;
 import io.elasticjob.lite.config.JobCoreConfiguration;
 import io.elasticjob.lite.config.LiteJobConfiguration;
+import io.elasticjob.lite.config.schedule.CalendarIntervalJobSchedule;
+import io.elasticjob.lite.config.schedule.CronJobSchedule;
+import io.elasticjob.lite.config.schedule.DailyTimeIntervalJobSchedule;
 import io.elasticjob.lite.event.rdb.JobEventRdbConfiguration;
 import io.elasticjob.lite.executor.handler.JobProperties;
 import io.elasticjob.lite.spring.api.SpringJobScheduler;
@@ -31,9 +34,15 @@ import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.elasticjob.lite.spring.job.parser.common.BaseJobBeanDefinitionParserTag.CRON_ATTRIBUTE;
 
 /**
  * 基本作业的命名空间解析器.
@@ -89,7 +98,7 @@ public abstract class AbstractJobBeanDefinitionParser extends AbstractBeanDefini
     private BeanDefinition createJobCoreBeanDefinition(final Element element) {
         BeanDefinitionBuilder jobCoreBeanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(JobCoreConfiguration.class);
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(ID_ATTRIBUTE));
-        jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(BaseJobBeanDefinitionParserTag.CRON_ATTRIBUTE));
+        jobCoreBeanDefinitionBuilder.addConstructorArgValue(createJobScheduleBeanDefinition(element));
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(BaseJobBeanDefinitionParserTag.SHARDING_TOTAL_COUNT_ATTRIBUTE));
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(BaseJobBeanDefinitionParserTag.SHARDING_ITEM_PARAMETERS_ATTRIBUTE));
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(BaseJobBeanDefinitionParserTag.JOB_PARAMETER_ATTRIBUTE));
@@ -98,6 +107,58 @@ public abstract class AbstractJobBeanDefinitionParser extends AbstractBeanDefini
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(element.getAttribute(BaseJobBeanDefinitionParserTag.DESCRIPTION_ATTRIBUTE));
         jobCoreBeanDefinitionBuilder.addConstructorArgValue(createJobPropertiesBeanDefinition(element));
         return jobCoreBeanDefinitionBuilder.getBeanDefinition();
+    }
+
+    private BeanDefinition createJobScheduleBeanDefinition(final Element element) {
+        BeanDefinitionBuilder scheduleBeanDefinitionBuilder = null;
+        String cron = element.getAttribute(CRON_ATTRIBUTE);
+        if (!Strings.isNullOrEmpty(cron)) {
+            scheduleBeanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(CronJobSchedule.class);
+            scheduleBeanDefinitionBuilder.addConstructorArgValue(cron);
+            return scheduleBeanDefinitionBuilder.getBeanDefinition();
+        }
+
+        Node node = element.getFirstChild();
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element schedule = (Element) node;
+            switch (schedule.getTagName()) {
+                case "cron-schedule":
+                    scheduleBeanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(CronJobSchedule.class);
+                    scheduleBeanDefinitionBuilder.addConstructorArgValue(schedule.getAttribute(CRON_ATTRIBUTE));
+                    break;
+                case "daily-time-schedule":
+                    scheduleBeanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(DailyTimeIntervalJobSchedule.class);
+                    scheduleBeanDefinitionBuilder.addConstructorArgValue(schedule.getAttribute("interval"));
+                    scheduleBeanDefinitionBuilder.addConstructorArgValue(schedule.getAttribute("intervalUnit"));
+                    String daysOfWeek = schedule.getAttribute("daysOfWeek");
+                    if (!Strings.isNullOrEmpty(daysOfWeek)) {
+                        Set<Integer> days = Arrays.stream(daysOfWeek.split(",")).map(Integer::valueOf).collect(Collectors.toSet());
+                        scheduleBeanDefinitionBuilder.addPropertyValue("daysOfWeek", days);
+                    }
+                    String startTimeOfDay = schedule.getAttribute("startTimeOfDay");
+                    if (!Strings.isNullOrEmpty(startTimeOfDay)) {
+                        scheduleBeanDefinitionBuilder.addPropertyValue("startTimeOfDay", startTimeOfDay);
+                    }
+                    String endTimeOfDay = schedule.getAttribute("endTimeOfDay ");
+                    if (!Strings.isNullOrEmpty(endTimeOfDay)) {
+                        scheduleBeanDefinitionBuilder.addPropertyValue("endTimeOfDay", endTimeOfDay);
+                    }
+                    break;
+                case "calendar-schedule":
+                    scheduleBeanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(CalendarIntervalJobSchedule.class);
+                    scheduleBeanDefinitionBuilder.addConstructorArgValue(schedule.getAttribute("interval"));
+                    scheduleBeanDefinitionBuilder.addConstructorArgValue(schedule.getAttribute("intervalUnit"));
+                    String timeZone = schedule.getAttribute("timeZone");
+                    if (!Strings.isNullOrEmpty(timeZone)) {
+                        scheduleBeanDefinitionBuilder.addPropertyValue("timeZone", timeZone);
+                    }
+                    break;
+                default:
+                    // do nothing
+            }
+        }
+
+        return  scheduleBeanDefinitionBuilder == null ? null : scheduleBeanDefinitionBuilder.getBeanDefinition();
     }
     
     private BeanDefinition createJobPropertiesBeanDefinition(final Element element) {
