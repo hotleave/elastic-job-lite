@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.elasticjob</groupId>
     <artifactId>elastic-job-lite</artifactId>
-    <version>3.0.0.M1-SNAPSHOT</version>
+    <version>3.0.0-more-trigger</version>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>Elastic-Job - distributed scheduled job solution</description>
@@ -609,14 +609,26 @@
         </developer>
     </developers>
     
+    <!--<distributionManagement>-->
+        <!--<snapshotRepository>-->
+            <!--<id>sonatype-nexus-snapshots</id>-->
+            <!--<url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+        <!--</snapshotRepository>-->
+        <!--<repository>-->
+            <!--<id>sonatype-nexus-releases</id>-->
+            <!--<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>-->
+        <!--</repository>-->
+    <!--</distributionManagement>-->
     <distributionManagement>
         <snapshotRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>nexus-snapshots</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>http://nexus.zhichengcredit.com/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
-            <id>sonatype-nexus-releases</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <id>nexus-releases</id>
+            <name>Nexus Release Repository</name>
+            <url>http://nexus.zhichengcredit.com/nexus/content/repositories/releases/</url>
         </repository>
     </distributionManagement>
 </project>
